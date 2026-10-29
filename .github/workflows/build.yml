@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download source code
+      - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Install Java 21
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -28,10 +28,19 @@ jobs:
         with:
           gradle-version: '9.2.0'
 
-      - name: Build Minecraft mod
+      - name: Build KingCapture
         run: gradle --no-daemon clean build
 
-      - name: Upload JAR
+      - name: Verify JAR exists
+        run: |
+          echo "Generated JAR files:"
+          ls -lah build/libs/
+          test -f build/libs/kingcapture-1.0.0.jar
+
+      - name: Upload installable mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: KingCapture-JAR
+          name: KingCapture-1.0.0
+          path: build/libs/kingcapture-1.0.0.jar
+          if-no-files-found: error
+          retention-days: 14
