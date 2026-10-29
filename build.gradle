@@ -1,0 +1,50 @@
+plugins {
+    id 'fabric-loom' version '1.14'   // Stable Loom release; requires Gradle 9.2+
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+repositories {
+    maven { url = 'https://maven.terraformersmc.com/' }
+    mavenCentral()
+}
+
+configurations {
+    shade            // merged into the mod jar (fat jar) so natives sit at org/bytedeco/**/android-arm64/
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Optional: config screen entrypoint only. NOT required at runtime.
+    modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    // FFmpeg via JavaCV. transitive=false avoids pulling OpenCV, OpenBLAS, etc.
+    shade("org.bytedeco:javacpp:${javacpp_version}") { transitive = false }
+    shade("org.bytedeco:javacpp:${javacpp_version}:android-arm64") { transitive = false }
+    shade("org.bytedeco:javacv:${javacv_version}") { transitive = false }
+    shade("org.bytedeco:ffmpeg:${ffmpeg_version}") { transitive = false }
+    shade("org.bytedeco:ffmpeg:${ffmpeg_version}:android-arm64") { transitive = false }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = 21 }
+java { withSourcesJar(); sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21 }
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from({ configurations.shade.collect { it.isDirectory() ? it : zipTree(it) } }) {
+        exclude 'META-INF/**', 'module-info.class'
+    }
+}
