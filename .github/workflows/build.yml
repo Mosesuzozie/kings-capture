@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -27,25 +27,10 @@ jobs:
         with:
           gradle-version: '9.2.0'
 
-      - name: Restore Java source from committed source archive
+      - name: Verify source tree exists
         run: |
-          mkdir -p /tmp/kingcapture-source
-          cat source-archive/part-*.b64 | base64 --decode > /tmp/kingcapture-source.zip
-          unzip -t /tmp/kingcapture-source.zip
-          unzip -oq /tmp/kingcapture-source.zip -d /tmp/kingcapture-source
-          test -d /tmp/kingcapture-source/src/main/java
-          cp -a /tmp/kingcapture-source/src .
-
-      - name: Commit normal source tree to GitHub
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/
-          git rm -r source-archive/
-          if ! git diff --cached --quiet; then
-            git commit -m "Add KingCapture Java source tree"
-            git push origin HEAD:main
-          fi
+          test -f src/main/java/dev/kingcapture/KingCaptureMod.java
+          test -f src/main/resources/fabric.mod.json
 
       - name: Build KingCapture
         run: gradle --no-daemon clean build
