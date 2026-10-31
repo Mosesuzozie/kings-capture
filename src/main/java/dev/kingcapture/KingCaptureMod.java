@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.option.KeyBinding;
@@ -38,14 +39,15 @@ public class KingCaptureMod implements ClientModInitializer {
             RecordingMenuButtons.refresh();
         });
 
-        // Fabric's screen event is used instead of a hard-coded GameMenuScreen mixin. This runs
-        // after vanilla and other mods initialize the pause screen, so both buttons are attached
-        // to the actual widget list and survive screen resizing.
+        // Add both controls to the real pause-menu button list after vanilla initialization.
+        // Fabric's Screens helper is public and intended for adding/removing screen buttons.
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof GameMenuScreen)) return;
 
             boolean showRecorder = KcConfig.get().showEscButton;
             boolean showLibrary = KcConfig.get().showRecordingsButton;
+            if (!showRecorder && !showLibrary) return;
+
             int gap = 6;
             int buttonWidth = Math.min(154, Math.max(90, (scaledWidth - 22 - gap) / 2));
             int count = (showRecorder ? 1 : 0) + (showLibrary ? 1 : 0);
@@ -54,18 +56,23 @@ public class KingCaptureMod implements ClientModInitializer {
             int y = Math.max(8, scaledHeight - 32);
 
             if (showRecorder) {
-                ButtonWidget record = ButtonWidget.builder(RecordingController.buttonLabel(), button -> RecordingController.toggle())
-                        .dimensions(left, y, buttonWidth, 20).build();
-                screen.addDrawableChild(record);
+                ButtonWidget record = ButtonWidget.builder(
+                                RecordingController.buttonLabel(),
+                                button -> RecordingController.toggle())
+                        .dimensions(left, y, buttonWidth, 20)
+                        .build();
+                Screens.getButtons(screen).add(record);
                 RecordingMenuButtons.attach(record);
             }
 
             if (showLibrary) {
                 int recordingsX = left + (showRecorder ? buttonWidth + gap : 0);
-                ButtonWidget recordings = ButtonWidget.builder(Text.literal("Recordings"),
+                ButtonWidget recordings = ButtonWidget.builder(
+                                Text.literal("Recordings"),
                                 button -> client.setScreen(new RecordingsScreen(screen)))
-                        .dimensions(recordingsX, y, buttonWidth, 20).build();
-                screen.addDrawableChild(recordings);
+                        .dimensions(recordingsX, y, buttonWidth, 20)
+                        .build();
+                Screens.getButtons(screen).add(recordings);
             }
         });
 
