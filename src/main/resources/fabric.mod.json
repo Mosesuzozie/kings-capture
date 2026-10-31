@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "kingcapture",
+  "version": "${version}",
+  "name": "KingCapture",
+  "description": "In-game MP4 gameplay recorder with game audio. Built for PojavLauncher (Android ARM64), works on desktop too.",
+  "authors": ["KingCapture"],
+  "license": "GPL-3.0-or-later",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.kingcapture.KingCaptureMod"],
+    "modmenu": ["dev.kingcapture.ui.ModMenuIntegration"]
+  },
+  "mixins": ["kingcapture.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": { "modmenu": "*" }
+}
