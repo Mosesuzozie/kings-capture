@@ -5,7 +5,9 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
-base { archivesName = project.archives_base_name }
+base {
+    archivesName = project.archives_base_name
+}
 
 repositories {
     maven { url = 'https://maven.terraformersmc.com/' }
@@ -14,7 +16,7 @@ repositories {
 
 configurations {
     shade
-    implementation.extendsFrom shade
+    implementation.extendsFrom(shade)
 }
 
 dependencies {
@@ -23,28 +25,39 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // Mod Menu is compile-time only and remains an optional runtime dependency.
+    // Optional compile-time API; Mod Menu itself is not required at runtime.
     modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
-    // Bundle the JavaCV / FFmpeg classes plus Android ARM64 natives only.
+    // Include only the needed JavaCV / FFmpeg artifacts and Android ARM64 natives.
     shade("org.bytedeco:javacpp:${javacpp_version}") { transitive = false }
-    shade("org.bytedeco:javacpp:${javacpp_version}:android-arm64") { transitiv = false }
-    shade("org.bytedeco:javcv:${javacv_version}") { transitive = false }
+    shade("org.bytedeco:javacpp:${javacpp_version}:android-arm64") { transitive = false }
+    shade("org.bytedeco:javacv:${javacv_version}") { transitive = false }
     shade("org.bytedeco:ffmpeg:${ffmpeg_version}") { transitive = false }
     shade("org.bytedeco:ffmpeg:${ffmpeg_version}:android-arm64") { transitive = false }
 }
 
 processResources {
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
 }
 
-tasks.withType(JavaCompile).configureEcach { options.release = 21 }
-java { withSourcesJar(); sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21 }
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
 
-lar {
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from({ configurations.shade.collect { it.isDirectory() ? it : zipTree(it) } }) {
-        exclude 'META-INF/*', 'module-info.class'
+    from({
+        configurations.shade.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'META-INF/**', 'module-info.class'
     }
 }
